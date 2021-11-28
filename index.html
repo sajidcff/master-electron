@@ -1,23 +1,74 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <!-- !! IMPORTANT !! -->
     <!-- Content-Security-Policy no longer required. Will show warning in devtools. Can be ignored -->
     <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'"> -->
-    <title>Hello World!</title>
-    <style>
-      html { font-family: sans-serif; background: #2B2E3B; color: #9FEAF9; }
-    </style>
+    <title>note65.com</title>
+    <!-- UIkit CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/css/uikit.min.css"
+    />
   </head>
   <body>
+    <!-- <button onclick="myFunction()">Click me</button> -->
+    <!-- <input type="button" id="btnEd" value="Get Data" /> -->
 
-    <h1>Hello Electron!</h1>
-    <p>Build cross-platform desktop apps with JavaScript, HTML, and CSS</p>
+    <div class="uk-container">
+      <div class="uk-position-center uk-overlay uk-overlay-default">
+        <div class="uk-alert-danger" uk-alert>
+          <p>Please enter your credentials</p>
+        </div>
+        <form style="width: 100%">
+          <div class="uk-margin" style="width: 100%">
+            <div class="uk-inline" style="width: 100%">
+              <span class="uk-form-icon" uk-icon="icon: user"></span>
+              <input
+                style="width: 100%"
+                class="uk-input"
+                type="text"
+                id="identifier"
+              />
+            </div>
+          </div>
+
+          <div class="uk-margin" style="width: 100%">
+            <div class="uk-inline" style="width: 100%">
+              <span class="uk-form-icon" uk-icon="icon: lock"></span>
+              <input
+                style="width: 100%"
+                class="uk-input"
+                type="password"
+                id="password"
+              />
+            </div>
+          </div>
+          <div class="uk-margin">
+            <div class="uk-inline" style="width: 100%">
+              <input
+                type="button"
+                class="uk-button uk-button-primary"
+                id="btnEd"
+                value="SUBMIT"
+                style="width: 100%"
+              />
+            </div>
+          </div>
+          <div class="uk-text-center uk-text-muted uk-text-small" id="btnLink">
+            Not a member?
+            <a href="#">Sign up now</a>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script>
       // You can also require other files to run in this process
-      require('./renderer.js')
+      require("./renderer.js");
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit-icons.min.js"></script>
   </body>
 </html>

@@ -1,45 +1,174 @@
 // Modules
-const {app, BrowserWindow} = require('electron')
+const { app, BrowserWindow } = require("electron");
+const colors = require("colors");
+const { ipcMain } = require("electron");
+const fs = require("fs");
+var http = require("http");
+var request = require("request");
+var unzipper = require("unzipper");
+const createDesktopShortcut = require("create-desktop-shortcuts");
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+let mainWindow;
+let secondaryWindow;
 
-// Create a new BrowserWindow when `app` is ready
-function createWindow () {
-
+function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000, height: 800,
+    width: 1000,
+    height: 800,
     webPreferences: {
-      // --- !! IMPORTANT !! ---
-      // Disable 'contextIsolation' to allow 'nodeIntegration'
-      // 'contextIsolation' defaults to "true" as from Electron v12
       contextIsolation: false,
-      nodeIntegration: true
-    }
-  })
-
-  // Load index.html into the new BrowserWindow
-  mainWindow.loadFile('index.html')
-
-  // Open DevTools - Remove for PRODUCTION!
+      nodeIntegration: true,
+    },
+  });
   mainWindow.webContents.openDevTools();
-
-  // Listen for window being closed
-  mainWindow.on('closed',  () => {
-    mainWindow = null
-  })
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
-// Electron `app` is ready
-app.on('ready', createWindow)
+function createSecondaryWindow() {
+  secondaryWindow = new BrowserWindow({
+    width: 500,
+    height: 300,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true,
+    },
+    parent: mainWindow,
+    modal: true,
+  });
+  secondaryWindow.loadFile("warning.html");
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+}
 
-// Quit when all windows are closed - (Not macOS - Darwin)
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+app.on("ready", checkFolder);
 
-// When app icon is clicked and app is running, (macOS) recreate the BrowserWindow
-app.on('activate', () => {
-  if (mainWindow === null) createWindow()
-})
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+
+app.on("activate", () => {
+  if (mainWindow === null) createWindow();
+});
+
+function checkFolder() {
+  const folderName = "C:/note65";
+
+  try {
+    if (!fs.existsSync(folderName)) {
+      console.log("Folder not exists");
+      fs.createReadStream("./note65.zip")
+        .pipe(unzipper.Extract({ path: "C:/" }))
+        .on("finish", function (resolve) {
+          console.log("Unzip complete", resolve);
+        });
+    } else {
+      console.log("Folder already exists");
+      const shortcutsCreated = createDesktopShortcut({
+        windows: {
+          filePath: "c:\\note65\\upload\\",
+          icon: "c:\\note65\\bin\\Generica_25576.ico",
+        },
+        linux: { filePath: "/home/path/to/executable" },
+        osx: { filePath: "/home/path/to/executable" },
+      });
+
+      if (shortcutsCreated) {
+        console.log("Everything worked correctly!");
+
+        checkUser();
+      } else {
+        console.log(
+          'Could not create the icon or set its permissions (in Linux if "chmod" is set to true, or not set)'
+        );
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function checkUser() {
+  createWindow();
+
+  try {
+    var data = fs.readFileSync("auth.json", "utf8");
+    console.log(data);
+    var json = JSON.parse(data);
+    console.log(json.identifier);
+    console.log(json.password);
+    request.post(
+      "http://127.0.0.1:5000/userAuth/login",
+      {
+        json: {
+          identifier: json.identifier,
+          password: json.password,
+        },
+      },
+      function (error, response, body) {
+        if (error) {
+          console.log(error);
+        }
+        console.log(body);
+
+        if (body.success == true) {
+          fs.writeFile("token.txt", body.data, function (err) {
+            if (err) throw err;
+            console.log("token.txt");
+            mainWindow.loadFile("inventory.html");
+          });
+        } else {
+          mainWindow.loadFile("index.html");
+        }
+      }
+    );
+  } catch (e) {
+    console.log("Error:", e.stack);
+  }
+}
+
+ipcMain.on("asynchronous-message", (event, arg) => {
+  try {
+    var json = arg;
+    console.log(json.identifier);
+    console.log(json.password);
+
+    request.post(
+      "http://127.0.0.1:5000/userAuth/login",
+      {
+        json: {
+          identifier: json.identifier,
+          password: json.password,
+        },
+      },
+      function (error, response, body) {
+        if (error) {
+          console.log(error);
+        }
+        console.log(body);
+
+        if (body.success == true) {
+          fs.writeFile("auth.json", JSON.stringify(json), function (err) {
+            if (err) throw err;
+            console.log("updated json file");
+
+            fs.writeFile("token.txt", body.data, function (err) {
+              if (err) throw err;
+              console.log("updated token.txt");
+              mainWindow.loadFile("inventory.html");
+            });
+          });
+        } else {
+          console.log(
+            "else show the sencoondary window saying that the user is not found"
+          );
+          createSecondaryWindow();
+        }
+      }
+    );
+  } catch (e) {
+    console.log("Error:", e.stack);
+  }
+});
